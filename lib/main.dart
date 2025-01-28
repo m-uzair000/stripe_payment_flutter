@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
+import 'package:stripe_integration/payment_page.dart';
 
 Future<void> main() async {
   //Initialize Flutter Binding
@@ -21,7 +22,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return  MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: Home(),
+      home: PaymentPage(),
     );
   }
 }
@@ -45,6 +46,12 @@ class Home extends StatelessWidget {
                 await makePayment(context);
               },
               child: const Text("Make Payment"),
+            ),
+            TextButton(
+              onPressed: () async {
+                await getMethodId();
+              },
+              child: const Text("Get ID"),
             ),
             // TextButton(
             //   onPressed: () async {
@@ -124,7 +131,7 @@ class Home extends StatelessWidget {
               ),
             ));
 
-        paymentIntent = null;
+        // paymentIntent = null;
       }).onError((error, stackTrace) {
         throw Exception(error);
       });
@@ -150,4 +157,41 @@ class Home extends StatelessWidget {
       print('$e');
     }
   }
+
+  Future<void> getMethodId() async {
+    try {
+      // Create PaymentMethodParams with BillingDetails and Address
+      var params = PaymentMethodParams.card(
+        paymentMethodData: PaymentMethodData(
+          billingDetails: BillingDetails(
+            name: 'John Doe',
+            email: 'john.doe@example.com',
+            phone: '+1234567890',
+            address: Address(
+              city: 'San Francisco',
+              country: 'US',
+              line1: '123 Main St',
+              line2: 'Apartment 4',
+              postalCode: '94107',
+              state: 'CA',
+            ),
+          ),
+        ),
+      );
+
+      // Create the payment method
+      final paymentMethod = await Stripe.instance.createPaymentMethod(params: params);
+
+      // Check if the paymentMethod was created successfully and print the ID
+      if (paymentMethod != null) {
+        print('Payment Method ID: ${paymentMethod.id}');
+      } else {
+        print('Payment Method creation failed.');
+      }
+    } catch (e) {
+      // Catch any exceptions and print error message
+      print('Error: $e');
+    }
+  }
+
 }
